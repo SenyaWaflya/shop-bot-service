@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from src.bot import bot, dp
-from src.routers.users import users_router
+from src.handlers.users import users_router
 
 logging.basicConfig(level=logging.INFO)
 

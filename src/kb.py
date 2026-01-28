@@ -6,7 +6,7 @@ from aiogram.utils.keyboard import (
     ReplyKeyboardBuilder,
 )
 
-from src.api.catalog import ProductsApi
+from src.api.products import ProductsApi
 from src.callbacks.brand import BrandCallback
 from src.callbacks.product import ProductCallback
 
@@ -16,27 +16,27 @@ cart = KeyboardButton(text='Корзина 🛒')
 contacts = KeyboardButton(text='Контакты ℹ️')
 main_kb = ReplyKeyboardBuilder([[catalog], [profile, cart], [contacts]]).as_markup(resize_keyboard=True)
 
-apple = InlineKeyboardButton(text='Apple 🍎', callback_data=BrandCallback(name='Apple', action='open').pack())
-xiaomi = InlineKeyboardButton(text='Xiaomi 📱', callback_data=BrandCallback(name='Xiaomi', action='open').pack())
-catalog_kb = InlineKeyboardBuilder([[apple, xiaomi]]).as_markup(resize_keyboard=True)
-
 to_cart = InlineKeyboardButton(text='Добавить в корзину 🛒', callback_data='to_cart')
-back = InlineKeyboardButton(
-    text='Назад ⏪', callback_data=ProductCallback(id=-1, brand='all', title='all', action='back').pack()
-)
-product_kb = InlineKeyboardBuilder([[to_cart, back]]).as_markup(resize_keyboard=True)
+back = InlineKeyboardButton(text='Назад ⏪', callback_data=ProductCallback(id=0, action='back').pack())
+product_kb = InlineKeyboardBuilder().row(to_cart, back).as_markup()
+
+
+async def brands_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    brands = await ProductsApi.get_brands()
+    for brand in brands:
+        builder.button(text=brand, callback_data=BrandCallback(title=brand, action='open'))
+    return builder.adjust(2).as_markup()
 
 
 async def products_kb(brand: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    products = await ProductsApi.get_products()
+    products = await ProductsApi.get_all()
     for product in products:
         if product['brand'] == brand:
             builder.button(
                 text=product['title'],
-                callback_data=ProductCallback(
-                    id=product['id'], brand=product['brand'], title=product['title'], action='open'
-                ),
+                callback_data=ProductCallback(id=product['id'], action='open'),
             )
-    builder.row(InlineKeyboardButton(text='Назад ⏪', callback_data=BrandCallback(name='all', action='back').pack()))
+    builder.row(InlineKeyboardButton(text='Назад ⏪', callback_data=BrandCallback(title='all', action='back').pack()))
     return builder.as_markup()

@@ -1,0 +1,6 @@
+from aiogram.fsm.state import State, StatesGroup
+
+
+class CatalogState(StatesGroup):
+    brand = State()
+    product_id = State()
