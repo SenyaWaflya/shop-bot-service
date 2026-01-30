@@ -1,23 +1,27 @@
 from httpx import AsyncClient
 
+from src.schemas.products import Product
 from src.settings import settings
 
 
 class ProductsApi:
     @staticmethod
-    async def get_all() -> list[dict]:
+    async def get_all() -> list[Product]:
         async with AsyncClient() as client:
             resp = await client.get(f'{settings.API_URL}/products/')
-            return resp.json()
+            products = [Product.model_validate(product) for product in resp.json()]
+            return products
 
     @staticmethod
-    async def get(product_id: int) -> dict:
+    async def get(product_id: int) -> Product:
         async with AsyncClient() as client:
             resp = await client.get(f'{settings.API_URL}/products/{product_id}')
-            return resp.json()
+            product = Product.model_validate(resp.json())
+            return product
 
     @staticmethod
     async def get_brands() -> list[str]:
         async with AsyncClient() as client:
             resp = await client.get(f'{settings.API_URL}/products/brands')
-            return resp.json()
+            brands = resp.json()
+            return brands
