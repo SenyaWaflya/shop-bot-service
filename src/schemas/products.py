@@ -7,4 +7,4 @@ class Product(BaseModel):
     title: str
     price: int
     quantity: int
-    image_path: str | None
+    image_path: str
