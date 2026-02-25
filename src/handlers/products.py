@@ -1,4 +1,3 @@
-
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InputMediaPhoto, Message
@@ -8,19 +7,21 @@ from src.api.shop_backend.carts import CartsApi
 from src.api.shop_backend.products import ProductsApi
 from src.api.shop_backend.users import UsersApi
 from src.callbacks.brand import BrandCallback
-from src.callbacks.cart import CartCallback
+from src.callbacks.cart import AddToCartCallback
 from src.callbacks.product import ProductCallback
 from src.kb import brands_kb, product_kb, products_kb, quantity_of_product_kb
 from src.schemas.carts import CartItemDto
-from src.utils.files import file_bytes_to_photo, get_static_photo
+from src.settings import settings
+from src.utils.files import file_bytes_to_photo
 
 products_router = Router(name='products')
 
 
 @products_router.message(F.text == 'Каталог 🔍')
 async def brands_catalog(message: Message) -> None:
-    photo = await get_static_photo('catalog_icon.png')
-    await message.answer_photo(photo=photo, caption='Выберите фирму устройства', reply_markup=await brands_kb())
+    await message.answer_photo(
+        photo=settings.CATALOG_PHOTO_ID, caption='Выберите фирму устройства', reply_markup=await brands_kb()
+    )
 
 
 @products_router.callback_query(BrandCallback.filter(F.action == 'open'))
@@ -63,7 +64,7 @@ async def close_product(callback: CallbackQuery, state: FSMContext) -> None:
     brand = data['brand']
     await callback.message.edit_media(
         media=InputMediaPhoto(
-            media=await get_static_photo('catalog_icon.png'),
+            media=settings.CATALOG_PHOTO_ID,
             caption='Выберите модель',
         ),
         reply_markup=await products_kb(brand),
@@ -80,8 +81,8 @@ async def open_to_cart(callback: CallbackQuery, callback_data: ProductCallback) 
     )
 
 
-@products_router.callback_query(CartCallback.filter(F.action == 'back'))
-async def close_product_to_cart(callback: CallbackQuery, callback_data: CartCallback) -> None:
+@products_router.callback_query(AddToCartCallback.filter(F.action == 'back'))
+async def close_product_to_cart(callback: CallbackQuery, callback_data: AddToCartCallback) -> None:
     await callback.answer()
     product = await ProductsApi.get(product_id=callback_data.product_id)
     await callback.message.edit_caption(
@@ -95,14 +96,14 @@ async def close_product_to_cart(callback: CallbackQuery, callback_data: CartCall
     )
 
 
-@products_router.callback_query(CartCallback.filter(F.action == 'add_to_cart'))
-async def add_to_cart(callback: CallbackQuery, callback_data: CartCallback) -> None:
+@products_router.callback_query(AddToCartCallback.filter(F.action == 'add_to_cart'))
+async def add_to_cart(callback: CallbackQuery, callback_data: AddToCartCallback) -> None:
     await callback.answer(text='Товар добавлен в корзину!', show_alert=True)
     user_id = (await UsersApi.get(callback.from_user.id)).id
     item_dto = CartItemDto(product_id=callback_data.product_id, quantity=callback_data.quantity)
     await CartsApi.add_to_cart(user_id=user_id, item_dto=item_dto)
 
-    catalog_photo = await get_static_photo('catalog_icon.png')
     await callback.message.edit_media(
-        media=InputMediaPhoto(media=catalog_photo, caption='Выберите фирму устройства'), reply_markup=await brands_kb()
+        media=InputMediaPhoto(media=settings.CATALOG_PHOTO_ID, caption='Выберите фирму устройства'),
+        reply_markup=await brands_kb(),
     )

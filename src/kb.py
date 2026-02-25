@@ -9,7 +9,7 @@ from aiogram.utils.keyboard import (
 from src.api.shop_backend.carts import CartsApi
 from src.api.shop_backend.products import ProductsApi
 from src.callbacks.brand import BrandCallback
-from src.callbacks.cart import CartCallback
+from src.callbacks.cart import AddToCartCallback, CartCallback
 from src.callbacks.product import ProductCallback
 
 catalog = KeyboardButton(text='Каталог 🔍')
@@ -18,6 +18,12 @@ cart = KeyboardButton(text='Корзина 🛒')
 contacts = KeyboardButton(text='Контакты ℹ️')
 main_kb = ReplyKeyboardBuilder([[catalog], [profile, cart], [contacts]]).as_markup(resize_keyboard=True)
 
+prev_item = InlineKeyboardButton(text='⬅️', callback_data=CartCallback(action='prev').pack())
+next_item = InlineKeyboardButton(text='➡️', callback_data=CartCallback(action='next').pack())
+delete = InlineKeyboardButton(text='Убрать из корзины', callback_data=CartCallback(action='delete').pack())
+order = InlineKeyboardButton(text='Оформить заказ', callback_data=CartCallback(action='order').pack())
+cart_kb = InlineKeyboardBuilder().row(delete).row(prev_item, next_item).row(order).as_markup()
+
 
 async def product_kb(product_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
@@ -25,7 +31,7 @@ async def product_kb(product_id: int) -> InlineKeyboardMarkup:
         text='Добавить в корзину 🛒', callback_data=ProductCallback(id=product_id, action='to_cart').pack()
     )
     back = InlineKeyboardButton(text='Назад ⏪', callback_data=ProductCallback(id=0, action='back').pack())
-    return builder.row(to_cart, back).as_markup()
+    return builder.row(to_cart, back).adjust(1).as_markup()
 
 
 async def brands_kb() -> InlineKeyboardMarkup:
@@ -52,11 +58,13 @@ async def products_kb(brand: str) -> InlineKeyboardMarkup:
 async def quantity_of_product_kb(product_id: int, user_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     active_cart = await CartsApi.get_active(user_id=user_id)
-    if active_cart is None:
+    products_ids_in_cart = [item.product_id for item in active_cart.items]
+    if active_cart is None or product_id not in products_ids_in_cart:
         product = await ProductsApi.get(product_id=product_id)
         for i in range(product.quantity):
             builder.button(
-                text=str(i + 1), callback_data=CartCallback(product_id=product_id, quantity=i + 1, action='add_to_cart')
+                text=str(i + 1),
+                callback_data=AddToCartCallback(product_id=product_id, quantity=i + 1, action='add_to_cart'),
             )
     else:
         for item in active_cart.items:
@@ -64,11 +72,11 @@ async def quantity_of_product_kb(product_id: int, user_id: int) -> InlineKeyboar
                 for i in range(item.product.quantity - item.quantity):
                     builder.button(
                         text=str(i + 1),
-                        callback_data=CartCallback(product_id=product_id, quantity=i + 1, action='add_to_cart'),
+                        callback_data=AddToCartCallback(product_id=product_id, quantity=i + 1, action='add_to_cart'),
                     )
     builder.row(
         InlineKeyboardButton(
-            text='Назад ⏪', callback_data=CartCallback(product_id=product_id, quantity=0, action='back').pack()
+            text='Назад ⏪', callback_data=AddToCartCallback(product_id=product_id, quantity=0, action='back').pack()
         )
     )
     return builder.as_markup()

@@ -23,3 +23,16 @@ class Cart(BaseModel):
 class CartItemDto(BaseModel):
     product_id: int
     quantity: int
+
+
+class CartItemState(BaseModel):
+    title: str
+    price: int
+    brand: str
+    image_path: str
+    quantity: int
+
+
+class CartStateData(BaseModel):
+    items: list[CartItemState]
+    current_index: int

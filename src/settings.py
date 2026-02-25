@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     TOKEN: str
     SHOP_BACKEND_API_URL: str
     FILE_STORAGE_API_URL: str
+    CATALOG_PHOTO_ID: str
 
     model_config = SettingsConfigDict(env_file='.env')
 
