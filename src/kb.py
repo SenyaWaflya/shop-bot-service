@@ -58,8 +58,7 @@ async def products_kb(brand: str) -> InlineKeyboardMarkup:
 async def quantity_of_product_kb(product_id: int, user_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     active_cart = await CartsApi.get_active(user_id=user_id)
-    products_ids_in_cart = [item.product_id for item in active_cart.items]
-    if active_cart is None or product_id not in products_ids_in_cart:
+    if active_cart is None:
         product = await ProductsApi.get(product_id=product_id)
         for i in range(product.quantity):
             builder.button(
@@ -67,13 +66,22 @@ async def quantity_of_product_kb(product_id: int, user_id: int) -> InlineKeyboar
                 callback_data=AddToCartCallback(product_id=product_id, quantity=i + 1, action='add_to_cart'),
             )
     else:
-        for item in active_cart.items:
-            if item.product.id == product_id:
-                for i in range(item.product.quantity - item.quantity):
-                    builder.button(
-                        text=str(i + 1),
-                        callback_data=AddToCartCallback(product_id=product_id, quantity=i + 1, action='add_to_cart'),
-                    )
+        products_ids_in_cart = [item.product_id for item in active_cart.items]
+        if product_id not in products_ids_in_cart:
+            product = await ProductsApi.get(product_id=product_id)
+            for i in range(product.quantity):
+                builder.button(
+                    text=str(i + 1),
+                    callback_data=AddToCartCallback(product_id=product_id, quantity=i + 1, action='add_to_cart'),
+                )
+        else:
+            for item in active_cart.items:
+                if item.product.id == product_id:
+                    for i in range(item.product.quantity - item.quantity):
+                        builder.button(
+                            text=str(i + 1),
+                            callback_data=AddToCartCallback(product_id=product_id, quantity=i + 1, action='add_to_cart'),
+                        )
     builder.row(
         InlineKeyboardButton(
             text='Назад ⏪', callback_data=AddToCartCallback(product_id=product_id, quantity=0, action='back').pack()
