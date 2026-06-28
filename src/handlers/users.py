@@ -11,7 +11,7 @@ users_router = Router(name='users')
 
 @users_router.message(CommandStart())
 async def start(message: Message) -> None:
-    user_dto = UserDto(tg_id=str(message.from_user.id), username=message.from_user.username)
+    user_dto = UserDto(tg_id=message.from_user.id, username=message.from_user.username)
     await UsersApi.add(user_dto)
     await message.answer(text=f'Привет, <b>{message.from_user.first_name}</b>', reply_markup=main_kb)
 
@@ -19,11 +19,11 @@ async def start(message: Message) -> None:
 @users_router.message(F.text == 'Профиль 🧑‍💻')
 async def show_profile(message: Message) -> None:
     user = await UsersApi.get(message.from_user.id)
-    await message.answer(text=(f'Имя пользователя: {user.username}\nTelegram ID: {user.tg_id}'))
+    await message.answer(text=f'Имя пользователя: {user.username}\nTelegram ID: {user.tg_id}')
 
 
 @users_router.message(F.text == 'Контакты ℹ️')
 async def show_contacts(message: Message) -> None:
     await message.answer(
-        text=('По вопросам писать:\nTelegram : @golychh\nEmail: fathat2013.ag@gmail.com\nТелефон: +7(977)108-82-48')
+        text='По вопросам писать:\nTelegram : @golychh\nEmail: fathat2013.ag@gmail.com\nТелефон: +7(977)108-82-48'
     )

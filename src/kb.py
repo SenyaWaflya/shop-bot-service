@@ -44,13 +44,12 @@ async def brands_kb() -> InlineKeyboardMarkup:
 
 async def products_kb(brand: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    products = await ProductsApi.get_all()
+    products = await ProductsApi.get_by_brand(brand=brand)
     for product in products:
-        if product.brand == brand:
-            builder.button(
-                text=product.title,
-                callback_data=ProductCallback(id=product.id, action='open'),
-            )
+        builder.button(
+            text=product.title,
+            callback_data=ProductCallback(id=product.id, action='open'),
+        )
     builder.row(InlineKeyboardButton(text='Назад ⏪', callback_data=BrandCallback(title='all', action='back').pack()))
     return builder.adjust(1).as_markup()
 

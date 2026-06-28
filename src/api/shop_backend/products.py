@@ -6,9 +6,10 @@ from src.settings import settings
 
 class ProductsApi:
     @staticmethod
-    async def get_all() -> list[Product]:
+    async def get_by_brand(brand: str) -> list[Product]:
         async with AsyncClient() as client:
-            resp = await client.get(f'{settings.SHOP_BACKEND_API_URL}/products/')
+            resp = await client.get(f'{settings.SHOP_BACKEND_API_URL}/products/brands/{brand}')
+            print(resp.json(), flush=True)
             products = [Product.model_validate(product) for product in resp.json()]
             return products
 

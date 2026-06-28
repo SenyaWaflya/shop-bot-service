@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class UserDto(BaseModel):
-    tg_id: str
+    tg_id: int
     username: str | None
 
 
